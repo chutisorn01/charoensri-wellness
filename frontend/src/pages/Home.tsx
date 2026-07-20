@@ -29,6 +29,7 @@ interface ShopInfo {
   phone: string;
   email: string;
   openingHours: string;
+  logoUrl?: string;
   socialLinks?: {
     facebook?: string;
     instagram?: string;
@@ -198,7 +199,15 @@ function Home() {
           style={{ cursor: 'pointer' }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          <img src="/logo/logo.JPG" alt="Logo" className="nav-logo" style={{ borderRadius: '50%' }} />
+          <img 
+            src={shopInfo?.logoUrl === 'logo.JPG' || !shopInfo?.logoUrl ? '/logo/logo.JPG' : `/image/${shopInfo.logoUrl}`} 
+            alt="Logo" 
+            className="nav-logo" 
+            style={{ borderRadius: '50%' }} 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/logo/logo.JPG';
+            }}
+          />
           เจริญศรีนวดแผนไทย
         </motion.div>
         

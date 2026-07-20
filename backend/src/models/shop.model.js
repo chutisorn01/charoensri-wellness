@@ -9,6 +9,10 @@ const shopSchema = new mongoose.Schema({
     type: String,
     default: 'นวดถึงแผง แรงถึงใจ'
   },
+  logoUrl: {
+    type: String,
+    default: 'logo.JPG'
+  },
   address: {
     type: String,
     required: true,

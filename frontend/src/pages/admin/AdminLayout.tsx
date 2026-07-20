@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Scissors, Tag, FileText, Users, Settings, LogOut, Menu, X, Camera } from 'lucide-react';
 import './Admin.css';
@@ -7,6 +7,22 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('logo.JPG');
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const res = await fetch('http://localhost:5001/api/shop');
+        const data = await res.json();
+        if (data.success && data.data && data.data.logoUrl) {
+          setLogoUrl(data.data.logoUrl);
+        }
+      } catch (err) {
+        console.error('Error loading logo in admin layout:', err);
+      }
+    };
+    fetchLogo();
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -36,7 +52,14 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <img src="/logo/logo.JPG" alt="Logo" className="sidebar-logo" />
+          <img 
+            src={logoUrl === 'logo.JPG' ? '/logo/logo.JPG' : `/image/${logoUrl}`} 
+            alt="Logo" 
+            className="sidebar-logo" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/logo/logo.JPG';
+            }}
+          />
           <h3>ระบบหลังบ้าน</h3>
           <button 
             type="button"

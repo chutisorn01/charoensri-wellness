@@ -8,6 +8,8 @@ const AdminShop = () => {
   // Form State
   const [aboutUsText, setAboutUsText] = useState('');
   const [tagline, setTagline] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -45,6 +47,7 @@ const AdminShop = () => {
         const shop = data.data;
         setAboutUsText(shop.aboutUsText || '');
         setTagline(shop.tagline || '');
+        setLogoUrl(shop.logoUrl || 'logo.JPG');
         setAddress(shop.address || '');
         setPhone(shop.phone || '');
         setEmail(shop.email || '');
@@ -77,6 +80,67 @@ const AdminShop = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
+    if (!file) return;
+
+    setLogoUploading(true);
+
+    if (file.name.toLowerCase().endsWith('.heic')) {
+      showToast('กำลังแปลงไฟล์รูปภาพ .HEIC เป็น .JPG กรุณารอสักครู่...', 'success');
+      try {
+        const heic2any = (await import('heic2any')).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        file = new File([blobToUse], file.name.replace(/\.heic$/i, '.jpg'), {
+          type: 'image/jpeg'
+        });
+      } catch (err) {
+        console.error('HEIC conversion error:', err);
+        showToast('แปลงไฟล์ .HEIC ล้มเหลว กรุณาใช้ไฟล์ .JPG หรือ .PNG แทนครับ', 'error');
+        setLogoUploading(false);
+        return;
+      }
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      const token = localStorage.getItem('adminToken');
+      
+      try {
+        const res = await fetch('http://localhost:5001/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            image: base64String,
+            name: file.name
+          })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          setLogoUrl(data.filename);
+          showToast('อัปโหลดโลโก้ร้านสำเร็จ! อย่าลืมกดบันทึกข้อมูลเพื่อเปิดใช้งาน');
+        } else {
+          showToast('อัปโหลดล้มเหลว: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่ออัปโหลด', 'error');
+      } finally {
+        setLogoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -85,6 +149,7 @@ const AdminShop = () => {
     const bodyData = {
       aboutUsText,
       tagline,
+      logoUrl,
       address,
       phone,
       email,
@@ -150,6 +215,31 @@ const AdminShop = () => {
             <p>ระบุคำอธิบายความเป็นมา จุดเด่นของร้าน และที่ตั้งจริงของสถานบริการสปาเพื่อแสดงผลหน้าแรก</p>
           </div>
           <div className="shop-section-card">
+            <div className="form-group" style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#f1f5f9', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img 
+                  src={logoUrl === 'logo.JPG' || !logoUrl ? '/logo/logo.JPG' : `/image/${logoUrl}`} 
+                  alt="Shop Logo" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/logo/logo.JPG';
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ fontWeight: '600', color: 'var(--primary)', display: 'block', marginBottom: '5px' }}>🖼️ โลโก้ของร้านค้า (Shop Logo)</label>
+                <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>รองรับไฟล์รูปภาพ JPEG, PNG, WEBP และ HEIC</p>
+                <input 
+                  type="file" 
+                  accept="image/*,.heic" 
+                  onChange={handleLogoUpload} 
+                  disabled={logoUploading}
+                  style={{ fontSize: '0.85rem' }}
+                />
+                {logoUploading && <span style={{ display: 'block', marginTop: '5px', fontSize: '0.8rem', color: 'var(--primary-light)' }}>กำลังอัปโหลดโลโก้...</span>}
+              </div>
+            </div>
+
             <div className="form-group">
               <label><Info size={15} /> รายละเอียดเกี่ยวกับเรา (About Us)</label>
               <textarea 
