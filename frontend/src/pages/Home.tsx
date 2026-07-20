@@ -70,6 +70,7 @@ function Home() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<ContentItem | null>(null);
   const [galleries, setGalleries] = useState<GalleryItem[]>([]);
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -233,7 +234,7 @@ function Home() {
           variants={staggerContainer}
         >
           <motion.div variants={fadeIn} className="hero-subtitle">
-            "นวดถึงแผง แรงถึงใจ"
+            "{shopInfo?.tagline || 'นวดถึงแผง แรงถึงใจ'}"
           </motion.div>
           <motion.h1 variants={fadeIn} className="hero-title">
             เจริญศรีนวดแผนไทย
@@ -575,8 +576,7 @@ function Home() {
             gap: '30px'
           }}>
             {contents.map((item) => {
-              const ytId = item.videoUrl ? getYouTubeId(item.videoUrl) : null;
-              const isFb = item.videoUrl && (item.videoUrl.includes('facebook.com') || item.videoUrl.includes('fb.watch'));
+              const isVideo = !!item.videoUrl;
               return (
                 <motion.div 
                   key={item._id}
@@ -591,39 +591,35 @@ function Home() {
                     flexDirection: 'column'
                   }}
                 >
-                  {/* Card Header (Video Player or Image Cover) */}
-                  <div style={{ height: '220px', overflow: 'hidden', backgroundColor: '#000', position: 'relative' }}>
-                    {ytId ? (
-                      <iframe 
-                        width="100%" 
-                        height="100%" 
-                        src={`https://www.youtube.com/embed/${ytId}`} 
-                        title={item.title} 
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen
-                        style={{ width: '100%', height: '100%', border: 'none' }}
-                      />
-                    ) : isFb && item.videoUrl ? (
-                      <iframe 
-                        src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(item.videoUrl)}&show_text=0&width=360`} 
-                        width="100%" 
-                        height="100%" 
-                        style={{ border: 'none', overflow: 'hidden', width: '100%', height: '100%' }} 
-                        scrolling="no" 
-                        frameBorder="0" 
-                        allowFullScreen={true} 
-                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                      />
-                    ) : (
-                      <img 
-                        src={`/image/${item.imageUrl}`} 
-                        alt={item.title} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/image/2.jpg';
-                        }}
-                      />
+                  {/* Card Header (Image Cover with Play Button overlay if it is a video) */}
+                  <div 
+                    className="card-cover-image-container"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      if (isVideo && item.videoUrl) {
+                        setActiveVideoUrl(item.videoUrl);
+                      } else {
+                        setSelectedArticle(item);
+                      }
+                    }}
+                  >
+                    <img 
+                      src={`/image/${item.imageUrl}`} 
+                      alt={item.title} 
+                      className="card-cover-image"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/image/2.jpg';
+                      }}
+                    />
+                    
+                    {isVideo && (
+                      <div className="play-button-overlay">
+                        <div className="play-icon-circle">
+                          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -643,9 +639,15 @@ function Home() {
                       <button 
                         className="btn btn-outline" 
                         style={{ padding: '6px 14px', fontSize: '0.85rem', borderRadius: '8px' }}
-                        onClick={() => setSelectedArticle(item)}
+                        onClick={() => {
+                          if (isVideo && item.videoUrl) {
+                            setActiveVideoUrl(item.videoUrl);
+                          } else {
+                            setSelectedArticle(item);
+                          }
+                        }}
                       >
-                        อ่านเพิ่มเติม
+                        {isVideo ? '▶️ เล่นวิดีโอ' : 'อ่านเพิ่มเติม'}
                       </button>
                     </div>
                   </div>
@@ -658,10 +660,11 @@ function Home() {
 
       {/* Footer / Contact Section */}
       <footer id="contact">
-        <div className="footer-content" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '30px' }}>
-          <div style={{ flex: 1.5, minWidth: '300px' }}>
+        <div className="footer-content">
+          {/* Brand Info Column */}
+          <div className="footer-column">
             <div className="footer-brand">เจริญศรีนวดแผนไทย</div>
-            <p style={{ fontStyle: 'italic', color: 'var(--accent)', marginTop: '5px' }}>"นวดถึงแผง แรงถึงใจ"</p>
+            <p>"{shopInfo?.tagline || 'นวดถึงแผง แรงถึงใจ'}"</p>
             <p style={{ marginTop: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.6' }}>
               {shopInfo?.aboutUsText || 'ร้านไม่ได้เป็นเพียงสถานที่นวด แต่เป็นพื้นที่แห่งการพักผ่อน ที่ให้ความสำคัญกับสุขภาพกายและใจของลูกค้า'}
             </p>
@@ -673,33 +676,34 @@ function Home() {
             </p>
           </div>
           
-          <div style={{ flex: 1, minWidth: '250px' }}>
-            <h3 style={{ color: 'white', marginBottom: '15px' }}>ติดต่อเรา</h3>
+          {/* Contact Details Column */}
+          <div className="footer-column">
+            <h3>ติดต่อเรา</h3>
             {shopInfo?.phone ? (
               shopInfo.phone.split(',').map((num, i) => (
-                <p key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <div key={i} className="footer-contact-item">
                   <Phone size={18} color="var(--accent)" />
-                  <a href={`tel:${num.trim()}`} style={{ color: 'white', hover: { color: 'var(--accent)' } }}>{num.trim()}</a>
-                </p>
+                  <a href={`tel:${num.trim()}`}>{num.trim()}</a>
+                </div>
               ))
             ) : (
               <>
-                <p style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <div className="footer-contact-item">
                   <Phone size={18} color="var(--accent)" />
-                  <a href="tel:094-358-2662" style={{ color: 'white' }}>094-358-2662</a>
-                </p>
-                <p style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <a href="tel:094-358-2662">094-358-2662</a>
+                </div>
+                <div className="footer-contact-item">
                   <Phone size={18} color="var(--accent)" />
-                  <a href="tel:080-059-2451" style={{ color: 'white' }}>080-059-2451</a>
-                </p>
+                  <a href="tel:080-059-2451">080-059-2451</a>
+                </div>
               </>
             )}
 
             {shopInfo?.email && (
-              <p style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div className="footer-contact-item">
                 <Mail size={18} color="var(--accent)" />
-                <a href={`mailto:${shopInfo.email}`} style={{ color: 'white' }}>{shopInfo.email}</a>
-              </p>
+                <a href={`mailto:${shopInfo.email}`}>{shopInfo.email}</a>
+              </div>
             )}
 
             {/* Social Media Links */}
@@ -767,8 +771,9 @@ function Home() {
             </div>
           </div>
 
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <h3 style={{ color: 'white', marginBottom: '15px' }}>เวลาทำการ</h3>
+          {/* Operating Hours Column */}
+          <div className="footer-column">
+            <h3>เวลาทำการ</h3>
             <p style={{ fontSize: '1.2rem', color: 'var(--accent)', fontWeight: 'bold' }}>เปิดให้บริการ</p>
             <p style={{ fontSize: '1.1rem', marginTop: '5px' }}>
               {shopInfo?.openingHours || 'ทุกวัน 09:00 – 20:30 น.'}
@@ -776,11 +781,79 @@ function Home() {
           </div>
         </div>
         
-        <div className="footer-bottom" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
+        <div className="footer-bottom">
           <span>&copy; {new Date().getFullYear()} เจริญศรีนวดแผนไทย สงวนลิขสิทธิ์</span>
           <Link to="/login" className="footer-admin-link">Admin Access</Link>
         </div>
       </footer>
+
+      {/* Dynamic Video Lightbox Modal */}
+      {activeVideoUrl && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: 10000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px'
+        }} onClick={() => setActiveVideoUrl(null)}>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '900px',
+            backgroundColor: '#000',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+          }} onClick={e => e.stopPropagation()}>
+            <button 
+              style={{
+                position: 'absolute',
+                top: '-45px',
+                right: '0',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '1rem',
+                fontWeight: '500'
+              }}
+              onClick={() => setActiveVideoUrl(null)}
+            >
+              <X size={20} /> ปิดหน้าต่าง
+            </button>
+            
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              {activeVideoUrl.includes('youtube.com') || activeVideoUrl.includes('youtu.be') ? (
+                <iframe 
+                  src={`https://www.youtube.com/embed/${getYouTubeId(activeVideoUrl)}?autoplay=1`}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                />
+              ) : (
+                <iframe 
+                  src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(activeVideoUrl)}&show_text=0&autoplay=1`}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allowFullScreen={true}
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedArticle && (
         <div style={{
           position: 'fixed',

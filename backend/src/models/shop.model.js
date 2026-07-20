@@ -5,6 +5,10 @@ const shopSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  tagline: {
+    type: String,
+    default: 'นวดถึงแผง แรงถึงใจ'
+  },
   address: {
     type: String,
     required: true,

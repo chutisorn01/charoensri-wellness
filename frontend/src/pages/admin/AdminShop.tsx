@@ -7,6 +7,7 @@ const AdminShop = () => {
 
   // Form State
   const [aboutUsText, setAboutUsText] = useState('');
+  const [tagline, setTagline] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -43,6 +44,7 @@ const AdminShop = () => {
       if (data.success && data.data) {
         const shop = data.data;
         setAboutUsText(shop.aboutUsText || '');
+        setTagline(shop.tagline || '');
         setAddress(shop.address || '');
         setPhone(shop.phone || '');
         setEmail(shop.email || '');
@@ -82,6 +84,7 @@ const AdminShop = () => {
 
     const bodyData = {
       aboutUsText,
+      tagline,
       address,
       phone,
       email,
@@ -154,6 +157,16 @@ const AdminShop = () => {
                 value={aboutUsText} 
                 onChange={e => setAboutUsText(e.target.value)} 
                 placeholder="กรอกประวัติความเป็นมาและจุดเด่นของร้าน..."
+                required 
+              />
+            </div>
+            <div className="form-group">
+              <label>💬 คำโปรย / คำคมประจำร้าน (Tagline)</label>
+              <input 
+                type="text" 
+                value={tagline} 
+                onChange={e => setTagline(e.target.value)} 
+                placeholder="เช่น นวดถึงแผง แรงถึงใจ..."
                 required 
               />
             </div>
