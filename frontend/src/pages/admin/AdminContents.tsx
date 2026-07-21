@@ -1,3 +1,4 @@
+import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Calendar, Check, X, User } from 'lucide-react';
 
@@ -43,7 +44,7 @@ const AdminContents = () => {
 
   const fetchContents = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/contents');
+      const res = await fetch(`${API_URL}/api/contents`);
       const data = await res.json();
       if (data.success) {
         setContents(data.data);
@@ -85,7 +86,7 @@ const AdminContents = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -155,7 +156,7 @@ const AdminContents = () => {
     try {
       let res;
       if (editingContent) {
-        res = await fetch(`http://localhost:5001/api/contents/${editingContent._id}`, {
+        res = await fetch(`${API_URL}/api/contents/${editingContent._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ const AdminContents = () => {
           body: JSON.stringify(bodyData)
         });
       } else {
-        res = await fetch('http://localhost:5001/api/contents', {
+        res = await fetch(`${API_URL}/api/contents`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ const AdminContents = () => {
 
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/contents/${id}`, {
+      const res = await fetch(`${API_URL}/api/contents/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -209,7 +210,7 @@ const AdminContents = () => {
   const handleToggleActive = async (content: ContentItem) => {
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/contents/${content._id}`, {
+      const res = await fetch(`${API_URL}/api/contents/${content._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

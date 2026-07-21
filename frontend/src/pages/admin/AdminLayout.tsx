@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Scissors, Tag, FileText, Users, Settings, LogOut, Menu, X, Camera } from 'lucide-react';
 import './Admin.css';
+import { API_URL } from '../../config';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const AdminLayout = () => {
   useEffect(() => {
     const fetchLogo = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/shop');
+        const res = await fetch(`${API_URL}/api/shop`);
         const data = await res.json();
         if (data.success && data.data && data.data.logoUrl) {
           setLogoUrl(data.data.logoUrl);

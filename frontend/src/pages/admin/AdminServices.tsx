@@ -1,3 +1,4 @@
+import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const AdminServices = () => {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/services');
+      const res = await fetch(`${API_URL}/api/services`);
       const data = await res.json();
       if (data.success) {
         setServices(data.data);
@@ -81,7 +82,7 @@ const AdminServices = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -145,7 +146,7 @@ const AdminServices = () => {
     try {
       let res;
       if (editingService) {
-        res = await fetch(`http://localhost:5001/api/services/${editingService._id}`, {
+        res = await fetch(`${API_URL}/api/services/${editingService._id}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ const AdminServices = () => {
           body: JSON.stringify(bodyData)
         });
       } else {
-        res = await fetch('http://localhost:5001/api/services', {
+        res = await fetch(`${API_URL}/api/services`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -182,7 +183,7 @@ const AdminServices = () => {
     
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/services/${id}`, {
+      const res = await fetch(`${API_URL}/api/services/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -199,7 +200,7 @@ const AdminServices = () => {
   const handleToggleActive = async (service: Service) => {
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/services/${service._id}`, {
+      const res = await fetch(`${API_URL}/api/services/${service._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Scissors, Tag, Users, FileText, Calendar, CheckCircle } from 'lucide-react';
+import { API_URL } from '../../config';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -14,10 +15,10 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         const [servicesRes, promotionsRes, doctorsRes, contentsRes] = await Promise.all([
-          fetch('http://localhost:5001/api/services'),
-          fetch('http://localhost:5001/api/promotions'),
-          fetch('http://localhost:5001/api/doctors'),
-          fetch('http://localhost:5001/api/contents')
+          fetch(`${API_URL}/api/services`),
+          fetch(`${API_URL}/api/promotions`),
+          fetch(`${API_URL}/api/doctors`),
+          fetch(`${API_URL}/api/contents`)
         ]);
 
         const [servicesData, promotionsData, doctorsData, contentsData] = await Promise.all([

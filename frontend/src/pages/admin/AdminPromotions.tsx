@@ -1,3 +1,4 @@
+import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Calendar, Check, X } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const AdminPromotions = () => {
 
   const fetchPromotions = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/promotions');
+      const res = await fetch(`${API_URL}/api/promotions`);
       const data = await res.json();
       if (data.success) {
         setPromotions(data.data);
@@ -81,7 +82,7 @@ const AdminPromotions = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const AdminPromotions = () => {
     try {
       let res;
       if (editingPromo) {
-        res = await fetch(`http://localhost:5001/api/promotions/${editingPromo._id}`, {
+        res = await fetch(`${API_URL}/api/promotions/${editingPromo._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -159,7 +160,7 @@ const AdminPromotions = () => {
           body: JSON.stringify(bodyData)
         });
       } else {
-        res = await fetch('http://localhost:5001/api/promotions', {
+        res = await fetch(`${API_URL}/api/promotions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ const AdminPromotions = () => {
 
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/promotions/${id}`, {
+      const res = await fetch(`${API_URL}/api/promotions/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -204,7 +205,7 @@ const AdminPromotions = () => {
   const handleToggleActive = async (promo: Promotion) => {
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/promotions/${promo._id}`, {
+      const res = await fetch(`${API_URL}/api/promotions/${promo._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

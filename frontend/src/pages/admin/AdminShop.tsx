@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Info, Phone, Mail, Clock } from 'lucide-react';
+import { API_URL } from '../../config';
 
 const AdminShop = () => {
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ const AdminShop = () => {
 
   const fetchShopInfo = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/shop');
+      const res = await fetch(`${API_URL}/api/shop`);
       const data = await res.json();
       if (data.success && data.data) {
         const shop = data.data;
@@ -113,7 +114,7 @@ const AdminShop = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -167,7 +168,7 @@ const AdminShop = () => {
     };
 
     try {
-      const res = await fetch('http://localhost:5001/api/shop', {
+      const res = await fetch(`${API_URL}/api/shop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Leaf, Sparkles, Heart, ArrowRight, Menu, X, MapPin, Clock, Mail, Phone, Calendar, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_URL } from '../config';
 
 interface Service {
   _id: string;
@@ -98,12 +99,12 @@ function Home() {
     const fetchHomepageData = async () => {
       try {
         const [servicesRes, promotionsRes, shopRes, contentsRes, galleryRes, doctorsRes] = await Promise.all([
-          fetch('http://localhost:5001/api/services'),
-          fetch('http://localhost:5001/api/promotions'),
-          fetch('http://localhost:5001/api/shop'),
-          fetch('http://localhost:5001/api/contents'),
-          fetch('http://localhost:5001/api/gallery'),
-          fetch('http://localhost:5001/api/doctors')
+          fetch(`${API_URL}/api/services`),
+          fetch(`${API_URL}/api/promotions`),
+          fetch(`${API_URL}/api/shop`),
+          fetch(`${API_URL}/api/contents`),
+          fetch(`${API_URL}/api/gallery`),
+          fetch(`${API_URL}/api/doctors`)
         ]);
 
         const [servicesData, promotionsData, shopData, contentsData, galleryData, doctorsData] = await Promise.all([

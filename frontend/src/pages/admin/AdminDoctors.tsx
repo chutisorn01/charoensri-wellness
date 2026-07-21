@@ -1,3 +1,4 @@
+import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Check, X, Briefcase } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const AdminDoctors = () => {
 
   const fetchDoctors = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/doctors');
+      const res = await fetch(`${API_URL}/api/doctors`);
       const data = await res.json();
       if (data.success) {
         setDoctors(data.data);
@@ -81,7 +82,7 @@ const AdminDoctors = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -145,7 +146,7 @@ const AdminDoctors = () => {
     try {
       let res;
       if (editingDoctor) {
-        res = await fetch(`http://localhost:5001/api/doctors/${editingDoctor._id}`, {
+        res = await fetch(`${API_URL}/api/doctors/${editingDoctor._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ const AdminDoctors = () => {
           body: JSON.stringify(bodyData)
         });
       } else {
-        res = await fetch('http://localhost:5001/api/doctors', {
+        res = await fetch(`${API_URL}/api/doctors`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -182,7 +183,7 @@ const AdminDoctors = () => {
 
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/doctors/${id}`, {
+      const res = await fetch(`${API_URL}/api/doctors/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -199,7 +200,7 @@ const AdminDoctors = () => {
   const handleToggleActive = async (doc: Doctor) => {
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/doctors/${doc._id}`, {
+      const res = await fetch(`${API_URL}/api/doctors/${doc._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

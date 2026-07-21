@@ -1,3 +1,4 @@
+import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Camera, X } from 'lucide-react';
 
@@ -32,7 +33,7 @@ const AdminGallery = () => {
 
   const fetchGalleries = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/gallery');
+      const res = await fetch(`${API_URL}/api/gallery`);
       const data = await res.json();
       if (data.success) {
         setGalleries(data.data);
@@ -77,7 +78,7 @@ const AdminGallery = () => {
       const token = localStorage.getItem('adminToken');
       
       try {
-        const res = await fetch('http://localhost:5001/api/upload', {
+        const res = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ const AdminGallery = () => {
     const token = localStorage.getItem('adminToken');
 
     try {
-      const res = await fetch('http://localhost:5001/api/gallery', {
+      const res = await fetch(`${API_URL}/api/gallery`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const AdminGallery = () => {
 
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`http://localhost:5001/api/gallery/${id}`, {
+      const res = await fetch(`${API_URL}/api/gallery/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
