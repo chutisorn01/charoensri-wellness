@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Leaf, Sparkles, Heart, ArrowRight, Menu, X, MapPin, Clock, Mail, Phone, Calendar } from 'lucide-react';
+import { Leaf, Sparkles, Heart, ArrowRight, Menu, X, MapPin, Clock, Mail, Phone, Calendar, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Service {
@@ -61,6 +61,16 @@ interface GalleryItem {
   isActive: boolean;
 }
 
+interface Doctor {
+  _id: string;
+  name: string;
+  specialty: string;
+  bio: string;
+  profileImageUrl: string;
+  experienceYears: number;
+  isActive: boolean;
+}
+
 function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -71,6 +81,7 @@ function Home() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<ContentItem | null>(null);
   const [galleries, setGalleries] = useState<GalleryItem[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,20 +97,22 @@ function Home() {
   useEffect(() => {
     const fetchHomepageData = async () => {
       try {
-        const [servicesRes, promotionsRes, shopRes, contentsRes, galleryRes] = await Promise.all([
+        const [servicesRes, promotionsRes, shopRes, contentsRes, galleryRes, doctorsRes] = await Promise.all([
           fetch('http://localhost:5001/api/services'),
           fetch('http://localhost:5001/api/promotions'),
           fetch('http://localhost:5001/api/shop'),
           fetch('http://localhost:5001/api/contents'),
-          fetch('http://localhost:5001/api/gallery')
+          fetch('http://localhost:5001/api/gallery'),
+          fetch('http://localhost:5001/api/doctors')
         ]);
 
-        const [servicesData, promotionsData, shopData, contentsData, galleryData] = await Promise.all([
+        const [servicesData, promotionsData, shopData, contentsData, galleryData, doctorsData] = await Promise.all([
           servicesRes.json(),
           promotionsRes.json(),
           shopRes.json(),
           contentsRes.json(),
-          galleryRes.json()
+          galleryRes.json(),
+          doctorsRes.json()
         ]);
 
         if (servicesData.success) {
@@ -118,7 +131,11 @@ function Home() {
           // Filter only active gallery photos
           setGalleries(galleryData.data.filter((g: GalleryItem) => g.isActive !== false));
         }
-        if (shopInfoDataSuccess(shopData)) {
+        if (doctorsData.success) {
+          // Filter only active therapists/doctors
+          setDoctors(doctorsData.data.filter((d: Doctor) => d.isActive !== false));
+        }
+        if (shopData.success && shopData.data) {
           setShopInfo(shopData.data);
         }
       } catch (error) {
@@ -126,11 +143,6 @@ function Home() {
       } finally {
         setLoading(false);
       }
-    };
-
-    // Helper inside useEffect scope
-    const shopInfoDataSuccess = (shopData: any) => {
-      return shopData.success && shopData.data;
     };
 
     fetchHomepageData();
@@ -226,6 +238,7 @@ function Home() {
           <a className="nav-link" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>หน้าแรก</a>
           <a className="nav-link" onClick={() => scrollToSection('services')}>บริการของเรา</a>
           <a className="nav-link" onClick={() => scrollToSection('promotions')}>โปรโมชัน</a>
+          <a className="nav-link" onClick={() => scrollToSection('therapists')}>ผู้เชี่ยวชาญของเรา</a>
           <a className="nav-link" onClick={() => scrollToSection('contents')}>วิดีโอและบทความ</a>
           <a className="nav-link" onClick={() => scrollToSection('contact')}>ติดต่อเรา</a>
         </motion.div>
@@ -519,6 +532,123 @@ function Home() {
         </motion.div>
       </section>
 
+      {/* Therapists/Doctors Section */}
+      <section id="therapists" className="therapists-section" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
+        <motion.h2 
+          className="section-title"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+        >
+          ผู้เชี่ยวชาญการนวดและการบำบัด
+        </motion.h2>
+        
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '50px', fontSize: '1rem', marginTop: '-30px' }}>
+          ทีมพนักงานนวดและผู้ให้บริการสปามืออาชีพ ผ่านการอบรมตามมาตรฐาน ได้รับการยอมรับจากผู้ใช้บริการจริง
+        </p>
+
+        <motion.div 
+          className="therapists-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '30px',
+            maxWidth: '1200px',
+            margin: '0 auto'
+          }}
+        >
+          {doctors.length > 0 ? (
+            doctors.map((doc) => (
+              <motion.div 
+                key={doc._id}
+                variants={fadeIn}
+                whileHover={{ y: -8 }}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '20px',
+                  padding: '30px 20px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
+                  border: '1px solid rgba(31, 63, 47, 0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
+                }}
+              >
+                {/* Image Avatar */}
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  marginBottom: '20px',
+                  border: '3px solid var(--accent)',
+                  boxShadow: '0 6px 15px rgba(186, 151, 88, 0.15)',
+                  backgroundColor: '#f1f5f9'
+                }}>
+                  <img 
+                    src={doc.profileImageUrl === 'no-photo.jpg' || !doc.profileImageUrl ? '/logo/logo.JPG' : `/image/${doc.profileImageUrl}`} 
+                    alt={doc.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/logo/logo.JPG';
+                    }}
+                  />
+                </div>
+
+                <h3 style={{ fontSize: '1.25rem', color: 'var(--primary)', fontWeight: '600', margin: '0 0 5px 0' }}>
+                  {doc.name}
+                </h3>
+                
+                {/* Specialty Badge */}
+                <span style={{
+                  fontSize: '0.8rem',
+                  color: 'white',
+                  backgroundColor: 'var(--primary-light)',
+                  padding: '4px 12px',
+                  borderRadius: '50px',
+                  fontWeight: '500',
+                  marginBottom: '12px',
+                  display: 'inline-block'
+                }}>
+                  {doc.specialty}
+                </span>
+
+                {/* Experience Years */}
+                <span style={{
+                  fontSize: '0.85rem',
+                  color: 'var(--accent)',
+                  fontWeight: '600',
+                  marginBottom: '15px',
+                  display: 'block'
+                }}>
+                  ประสบการณ์ {doc.experienceYears} ปี
+                </span>
+
+                <p style={{
+                  fontSize: '0.9rem',
+                  color: 'var(--text-muted)',
+                  lineHeight: '1.6',
+                  margin: 0
+                }}>
+                  {doc.bio}
+                </p>
+              </motion.div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px', gridColumn: '1 / -1', border: '2px dashed rgba(31, 63, 47, 0.1)', borderRadius: '16px' }}>
+              <Users size={36} color="var(--accent)" style={{ marginBottom: '10px' }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>ขณะนี้กำลังเตรียมพนักงานนวดผู้เชี่ยวชาญเพื่อแสดงข้อมูล โปรดติดตามเร็ว ๆ นี้!</p>
+            </div>
+          )}
+        </motion.div>
+      </section>
+
       {/* Gallery Section */}
       <section className="gallery">
         <motion.h2 
@@ -568,7 +698,7 @@ function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8 }}
-          style={{ marginBottom: '10px' }}
+          style={{ marginBottom: '35px' }}
         >
           วิดีโอ & บทความแนะนำ
         </motion.h2>
