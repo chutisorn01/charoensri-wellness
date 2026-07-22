@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Scissors, Tag, Users, FileText, Calendar, CheckCircle } from 'lucide-react';
+import { Scissors, Tag, Users, FileText, CheckCircle } from 'lucide-react';
 import { API_URL } from '../../config';
 
 const AdminDashboard = () => {

@@ -270,6 +270,7 @@ const AdminGallery = () => {
           {galleries.map((item) => (
             <div 
               key={item._id} 
+              className="group"
               style={{
                 position: 'relative',
                 borderRadius: '16px',
@@ -277,8 +278,7 @@ const AdminGallery = () => {
                 boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
                 border: '1px solid rgba(0,0,0,0.02)',
                 aspectRatio: '3/2',
-                backgroundColor: '#f5f5f5',
-                group: 'true' // styling placeholder
+                backgroundColor: '#f5f5f5'
               }}
             >
               <img 

@@ -26,6 +26,7 @@ interface Promotion {
 
 interface ShopInfo {
   aboutUsText: string;
+  tagline?: string;
   address: string;
   phone: string;
   email: string;
@@ -154,7 +155,7 @@ function Home() {
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.8, ease: "easeOut" }
+      transition: { duration: 0.8, ease: "easeOut" as const }
     }
   };
 
