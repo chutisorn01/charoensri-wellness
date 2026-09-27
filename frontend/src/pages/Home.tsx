@@ -421,25 +421,9 @@ function Home() {
               </motion.div>
             ))
           ) : (
-            // Fallback tags if database is empty
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center', gridColumn: '1 / -1' }}>
-              {[
-                'นวดแผนไทย', 'นวดคอ บ่า ไหล่', 'นวดฝ่าเท้า', 'นวดไทยออยล์', 
-                'นวดน้ำมันอโรม่า', 'นวดสครับ', 'นวดน้ำมันและสครับ', 
-                'นวดประคบสมุนไพร', 'นวดครีมหอยทาก'
-              ].map((service, index) => (
-                <div key={index} style={{ 
-                  padding: '15px 30px', 
-                  backgroundColor: 'white', 
-                  borderRadius: '30px', 
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                  color: 'var(--primary)',
-                  fontWeight: '500',
-                  border: '1px solid rgba(31, 63, 47, 0.1)'
-                }}>
-                  ✨ {service}
-                </div>
-              ))}
+            <div style={{ textAlign: 'center', padding: '40px', gridColumn: '1 / -1', border: '2px dashed rgba(31, 63, 47, 0.1)', borderRadius: '16px' }}>
+              <Sparkles size={36} color="var(--accent)" style={{ marginBottom: '10px' }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>ขณะนี้กำลังเตรียมข้อมูลบริการ โปรดติดตามเร็ว ๆ นี้</p>
             </div>
           )}
         </motion.div>
