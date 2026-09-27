@@ -18,7 +18,9 @@ const AdminGallery = () => {
   // Form State
   const [title, setTitle] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<{ filename: string; name: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -57,7 +59,6 @@ const AdminGallery = () => {
         const maxDim = 1600;
         let width = img.width;
         let height = img.height;
-
         if (width > maxDim || height > maxDim) {
           if (width > height) {
             height = Math.round((height * maxDim) / width);
@@ -92,77 +93,113 @@ const AdminGallery = () => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let file = e.target.files?.[0];
-    if (!file) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
 
     setUploading(true);
+    const token = localStorage.getItem('adminToken');
 
-    if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
-      showToast('กำลังแปลงไฟล์รูปภาพ .HEIC จากมือถือ...', 'success');
+    if (editingItem) {
+      let file = rawFiles[0];
       try {
-        const heic2any = (await import('heic2any')).default;
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8
+        if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+          setUploadProgress('กำลังแปลงไฟล์ .HEIC จากมือถือ...');
+          const heic2any = (await import('heic2any')).default;
+          const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+          const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          file = new File([blobToUse], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+        }
+
+        setUploadProgress('กำลังปรับขนาดและอัปโหลดรูปภาพ...');
+        const base64String = await compressImage(file);
+        const res = await fetch(`${API_URL}/api/upload`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ image: base64String, name: file.name })
         });
-        const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        file = new File([blobToUse], file.name.replace(/\.heic$/i, '.jpg'), {
-          type: 'image/jpeg'
-        });
+
+        const data = await res.json();
+        if (data.success) {
+          setImageUrl(data.filename);
+          showToast('อัปโหลดไฟล์รูปภาพใหม่สำเร็จ! กดปุ่มอัปเดตรูปภาพเพื่อบันทึก');
+        } else {
+          showToast('อัปโหลดล้มเหลว: ' + data.error, 'error');
+        }
       } catch (err) {
-        console.error('HEIC conversion error:', err);
-        showToast('แปลงไฟล์ .HEIC ล้มเหลว กรุณาใช้ไฟล์ .JPG หรือ .PNG แทนครับ', 'error');
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่ออัปโหลด', 'error');
+      } finally {
         setUploading(false);
-        return;
+        setUploadProgress('');
+        e.target.value = '';
       }
-    }
+    } else {
+      // Multiple file upload for new gallery photos
+      const newlyUploaded: { filename: string; name: string }[] = [];
 
-    try {
-      showToast('กำลังปรับขนาดและอัปโหลดรูปภาพ...', 'success');
-      const base64String = await compressImage(file);
-      const token = localStorage.getItem('adminToken');
+      for (let i = 0; i < rawFiles.length; i++) {
+        let file = rawFiles[i];
+        setUploadProgress(`กำลังประมวลผลรูปที่ ${i + 1} จาก ${rawFiles.length} รูป...`);
 
-      const res = await fetch(`${API_URL}/api/upload`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          image: base64String,
-          name: file.name
-        })
-      });
+        try {
+          if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+            const heic2any = (await import('heic2any')).default;
+            const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+            const blobToUse = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            file = new File([blobToUse], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+          }
 
-      const data = await res.json();
-      if (data.success) {
-        setImageUrl(data.filename);
-        showToast('อัปโหลดไฟล์รูปภาพสำเร็จ! กดปุ่มบันทึกเพื่อบันทึกลงแกลเลอรี');
-      } else {
-        showToast('อัปโหลดล้มเหลว: ' + data.error, 'error');
+          const base64String = await compressImage(file);
+          const res = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ image: base64String, name: file.name })
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            newlyUploaded.push({ filename: data.filename, name: file.name });
+          }
+        } catch (err) {
+          console.error('Upload failed for file:', file.name, err);
+        }
       }
-    } catch (err) {
-      showToast('เกิดข้อผิดพลาดในการเชื่อมต่ออัปโหลด', 'error');
-    } finally {
+
       setUploading(false);
+      setUploadProgress('');
+      e.target.value = '';
+
+      if (newlyUploaded.length > 0) {
+        setUploadedFiles(prev => [...prev, ...newlyUploaded]);
+        showToast(`อัปโหลดสำเร็จ ${newlyUploaded.length} รูป! กดปุ่มบันทึกลงแกลเลอรีเพื่อเสร็จสิ้น`);
+      } else {
+        showToast('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่อีกครั้ง', 'error');
+      }
     }
+  };
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl) {
-      showToast('กรุณาเลือกและอัปโหลดรูปภาพก่อนบันทึก', 'error');
-      return;
-    }
-
-    setSaving(true);
     const token = localStorage.getItem('adminToken');
 
-    try {
-      let res;
-      if (editingItem) {
-        res = await fetch(`${API_URL}/api/gallery/${editingItem._id}`, {
+    if (editingItem) {
+      if (!imageUrl) {
+        showToast('กรุณาเลือกและอัปโหลดรูปภาพก่อนบันทึก', 'error');
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const res = await fetch(`${API_URL}/api/gallery/${editingItem._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -174,35 +211,60 @@ const AdminGallery = () => {
             isActive: true
           })
         });
-      } else {
-        res = await fetch(`${API_URL}/api/gallery`, {
+
+        const data = await res.json();
+        if (data.success) {
+          showToast('อัปเดตรูปภาพแกลเลอรีสำเร็จ!');
+          setTitle('');
+          setImageUrl('');
+          setEditingItem(null);
+          fetchGalleries();
+        } else {
+          showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      // Batch save new photos
+      if (uploadedFiles.length === 0) {
+        showToast('กรุณาเลือกและอัปโหลดรูปภาพอย่างน้อย 1 รูปก่อนบันทึก', 'error');
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const payload = uploadedFiles.map(file => ({
+          imageUrl: file.filename,
+          title: title || '',
+          isActive: true
+        }));
+
+        const res = await fetch(`${API_URL}/api/gallery`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            imageUrl,
-            title,
-            isActive: true
-          })
+          body: JSON.stringify(payload)
         });
-      }
 
-      const data = await res.json();
-      if (data.success) {
-        showToast(editingItem ? 'อัปเดตรูปภาพแกลเลอรีสำเร็จ!' : 'บันทึกรูปภาพบรรยากาศร้านใหม่สำเร็จ!');
-        setTitle('');
-        setImageUrl('');
-        setEditingItem(null);
-        fetchGalleries();
-      } else {
-        showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+        const data = await res.json();
+        if (data.success) {
+          showToast(`บันทึกรูปภาพ ${uploadedFiles.length} รูปลงแกลเลอรีเรียบร้อยแล้ว!`);
+          setTitle('');
+          setUploadedFiles([]);
+          fetchGalleries();
+        } else {
+          showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+      } finally {
+        setSaving(false);
       }
-    } catch (error) {
-      showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -210,6 +272,7 @@ const AdminGallery = () => {
     setEditingItem(item);
     setTitle(item.title || '');
     setImageUrl(item.imageUrl);
+    setUploadedFiles([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -217,6 +280,7 @@ const AdminGallery = () => {
     setEditingItem(null);
     setTitle('');
     setImageUrl('');
+    setUploadedFiles([]);
   };
 
   const handleDelete = async (id: string) => {
@@ -260,16 +324,21 @@ const AdminGallery = () => {
       <div className="shop-section-card" style={{ marginBottom: '30px', padding: '25px' }}>
         <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {editingItem ? <Edit2 size={18} /> : <Camera size={18} />} 
-          {editingItem ? 'แก้ไขรูปภาพบรรยากาศ' : 'เพิ่มรูปภาพบรรยากาศใหม่'}
+          {editingItem ? 'แก้ไขรูปภาพบรรยากาศ' : 'เพิ่มรูปภาพบรรยากาศใหม่ (เลือกพร้อมกันได้หลายรูป)'}
         </h3>
         
         <form onSubmit={handleSave}>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="form-group" style={{ flex: 1, minWidth: '280px' }}>
-              <label>{editingItem ? 'เปลี่ยนไฟล์รูปภาพใหม่ (ไม่บังคับ)' : 'เลือกไฟล์รูปภาพ (JPG, PNG, WEBP, HEIC)'}</label>
+              <label>
+                {editingItem 
+                  ? 'เปลี่ยนไฟล์รูปภาพใหม่ (ไม่บังคับ)' 
+                  : 'เลือกไฟล์รูปภาพ (กดเลือกได้หลายรูปพร้อมกัน: JPG, PNG, WEBP, HEIC)'}
+              </label>
               <input 
                 type="file" 
                 accept="image/*" 
+                multiple={!editingItem}
                 onChange={handleFileUpload} 
                 style={{ padding: '10px', marginTop: '5px', width: '100%' }} 
                 disabled={uploading || saving}
@@ -282,7 +351,7 @@ const AdminGallery = () => {
                 type="text" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
-                placeholder="เช่น ห้องสปาส่วนตัว, อ่างแช่สมุนไพร, โซนต้อนรับ..." 
+                placeholder="เช่น ห้องสปาส่วนตัว, โซนต้อนรับ, อ่างแช่สมุนไพร..." 
                 disabled={uploading || saving}
                 style={{ width: '100%', marginTop: '5px' }}
               />
@@ -292,7 +361,7 @@ const AdminGallery = () => {
               <button 
                 type="submit" 
                 className="btn btn-primary" 
-                disabled={uploading || saving || !imageUrl}
+                disabled={uploading || saving || (editingItem ? !imageUrl : uploadedFiles.length === 0)}
                 style={{ 
                   height: '48px', 
                   flex: 1,
@@ -300,11 +369,18 @@ const AdminGallery = () => {
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   gap: '8px',
-                  boxShadow: '0 4px 12px rgba(31, 63, 47, 0.15)'
+                  boxShadow: '0 4px 12px rgba(31, 63, 47, 0.15)',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {editingItem ? <Edit2 size={18} /> : <Plus size={18} />}
-                {saving ? 'กำลังบันทึก...' : (editingItem ? 'อัปเดตรูปภาพ' : 'เพิ่มลงแกลเลอรี')}
+                {saving 
+                  ? 'กำลังบันทึก...' 
+                  : (editingItem 
+                      ? 'อัปเดตรูปภาพ' 
+                      : (uploadedFiles.length > 1 
+                          ? `เพิ่มลงแกลเลอรี (${uploadedFiles.length} รูป)` 
+                          : 'เพิ่มลงแกลเลอรี'))}
               </button>
               {editingItem && (
                 <button
@@ -326,19 +402,85 @@ const AdminGallery = () => {
               )}
             </div>
           </div>
+
+          {/* Uploading progress indicator */}
+          {uploading && (
+            <div style={{ marginTop: '15px', padding: '10px 15px', background: '#eef6fc', borderRadius: '8px', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem' }}>
+              <div className="spinner" style={{ width: '16px', height: '16px', border: '2px solid #1976d2', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+              <span>{uploadProgress || 'กำลังอัปโหลดรูปภาพ...'}</span>
+            </div>
+          )}
           
-          {imageUrl && (
+          {/* Editing Preview */}
+          {editingItem && imageUrl && (
             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <span style={{ fontSize: '0.9rem', color: 'var(--primary)' }}>ดูตัวอย่างรูปภาพที่จะบันทึก:</span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 500 }}>รูปภาพปัจจุบัน:</span>
               <div style={{ position: 'relative', width: '120px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--accent)' }}>
                 <img src={`/image/${imageUrl}`} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <button 
-                  type="button" 
-                  onClick={() => setImageUrl('')}
-                  style={{ position: 'absolute', top: '2px', right: '2px', padding: '2px', background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%', cursor: 'pointer' }}
+              </div>
+            </div>
+          )}
+
+          {/* Multiple Selected Files Preview */}
+          {!editingItem && uploadedFiles.length > 0 && (
+            <div style={{ marginTop: '20px', borderTop: '1px solid #e5e7eb', paddingTop: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.95rem', color: 'var(--primary)', fontWeight: 600 }}>
+                  📸 รูปภาพที่พร้อมบันทึก ({uploadedFiles.length} รูป):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setUploadedFiles([])}
+                  style={{ background: 'none', border: 'none', color: '#c62828', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
-                  <X size={12} color="#c62828" />
+                  ล้างทั้งหมด
                 </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {uploadedFiles.map((file, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      position: 'relative', 
+                      width: '110px', 
+                      height: '80px', 
+                      borderRadius: '8px', 
+                      overflow: 'hidden', 
+                      border: '2px solid var(--accent)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    <img 
+                      src={`/image/${file.filename}`} 
+                      alt={`Uploaded ${idx + 1}`} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => removeUploadedFile(idx)}
+                      title="ลบรูปนี้ออก"
+                      style={{ 
+                        position: 'absolute', 
+                        top: '4px', 
+                        right: '4px', 
+                        padding: '3px', 
+                        background: 'rgba(0,0,0,0.65)', 
+                        border: 'none', 
+                        borderRadius: '50%', 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <X size={12} color="#ffffff" />
+                    </button>
+                    <div style={{ position: 'absolute', bottom: '2px', left: '4px', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.65rem', padding: '1px 5px', borderRadius: '4px' }}>
+                      #{idx + 1}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

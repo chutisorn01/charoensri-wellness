@@ -12,11 +12,15 @@ exports.getGalleries = async (req, res, next) => {
   }
 };
 
-// @desc    Add a gallery photo
+// @desc    Add a gallery photo (supports single or array)
 // @route   POST /api/gallery
 // @access  Private/Admin
 exports.createGallery = async (req, res, next) => {
   try {
+    if (Array.isArray(req.body)) {
+      const galleries = await Gallery.insertMany(req.body);
+      return res.status(201).json({ success: true, count: galleries.length, data: galleries });
+    }
     const gallery = await Gallery.create(req.body);
     res.status(201).json({ success: true, data: gallery });
   } catch (error) {
