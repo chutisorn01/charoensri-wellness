@@ -1,6 +1,6 @@
 import { API_URL } from '../../config';
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Camera, X } from 'lucide-react';
+import { Plus, Trash2, Camera, X, Edit2 } from 'lucide-react';
 
 interface GalleryItem {
   _id: string;
@@ -45,14 +45,60 @@ const AdminGallery = () => {
     }
   };
 
+  const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
+
+  // Helper to compress image on client-side to make mobile uploads fast and prevent memory issues
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxDim = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } else {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      };
+      img.src = objectUrl;
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
 
-    if (file.name.toLowerCase().endsWith('.heic')) {
-      showToast('กำลังแปลงไฟล์รูปภาพ .HEIC เป็น .JPG กรุณารอสักครู่...', 'success');
+    if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+      showToast('กำลังแปลงไฟล์รูปภาพ .HEIC จากมือถือ...', 'success');
       try {
         const heic2any = (await import('heic2any')).default;
         const convertedBlob = await heic2any({
@@ -72,38 +118,35 @@ const AdminGallery = () => {
       }
     }
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
+    try {
+      showToast('กำลังปรับขนาดและอัปโหลดรูปภาพ...', 'success');
+      const base64String = await compressImage(file);
       const token = localStorage.getItem('adminToken');
-      
-      try {
-        const res = await fetch(`${API_URL}/api/upload`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            image: base64String,
-            name: file.name
-          })
-        });
-        
-        const data = await res.json();
-        if (data.success) {
-          setImageUrl(data.filename);
-          showToast('อัปโหลดไฟล์รูปภาพสำเร็จ!');
-        } else {
-          showToast('อัปโหลดล้มเหลว: ' + data.error, 'error');
-        }
-      } catch (err) {
-        showToast('เกิดข้อผิดพลาดในการเชื่อมต่ออัปโหลด', 'error');
-      } finally {
-        setUploading(false);
+
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          image: base64String,
+          name: file.name
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setImageUrl(data.filename);
+        showToast('อัปโหลดไฟล์รูปภาพสำเร็จ! กดปุ่มบันทึกเพื่อบันทึกลงแกลเลอรี');
+      } else {
+        showToast('อัปโหลดล้มเหลว: ' + data.error, 'error');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      showToast('เกิดข้อผิดพลาดในการเชื่อมต่ออัปโหลด', 'error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -117,24 +160,41 @@ const AdminGallery = () => {
     const token = localStorage.getItem('adminToken');
 
     try {
-      const res = await fetch(`${API_URL}/api/gallery`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          imageUrl,
-          title,
-          isActive: true
-        })
-      });
+      let res;
+      if (editingItem) {
+        res = await fetch(`${API_URL}/api/gallery/${editingItem._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            imageUrl,
+            title,
+            isActive: true
+          })
+        });
+      } else {
+        res = await fetch(`${API_URL}/api/gallery`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            imageUrl,
+            title,
+            isActive: true
+          })
+        });
+      }
 
       const data = await res.json();
       if (data.success) {
-        showToast('บันทึกรูปภาพบรรยากาศร้านใหม่สำเร็จ!');
+        showToast(editingItem ? 'อัปเดตรูปภาพแกลเลอรีสำเร็จ!' : 'บันทึกรูปภาพบรรยากาศร้านใหม่สำเร็จ!');
         setTitle('');
         setImageUrl('');
+        setEditingItem(null);
         fetchGalleries();
       } else {
         showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
@@ -144,6 +204,19 @@ const AdminGallery = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openEdit = (item: GalleryItem) => {
+    setEditingItem(item);
+    setTitle(item.title || '');
+    setImageUrl(item.imageUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setTitle('');
+    setImageUrl('');
   };
 
   const handleDelete = async (id: string) => {
@@ -186,13 +259,14 @@ const AdminGallery = () => {
       {/* Upload Form Card */}
       <div className="shop-section-card" style={{ marginBottom: '30px', padding: '25px' }}>
         <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Camera size={18} /> เพิ่มรูปภาพบรรยากาศใหม่
+          {editingItem ? <Edit2 size={18} /> : <Camera size={18} />} 
+          {editingItem ? 'แก้ไขรูปภาพบรรยากาศ' : 'เพิ่มรูปภาพบรรยากาศใหม่'}
         </h3>
         
         <form onSubmit={handleSave}>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="form-group" style={{ flex: 1, minWidth: '280px' }}>
-              <label>เลือกไฟล์รูปภาพ (JPG, PNG, WEBP, HEIC)</label>
+              <label>{editingItem ? 'เปลี่ยนไฟล์รูปภาพใหม่ (ไม่บังคับ)' : 'เลือกไฟล์รูปภาพ (JPG, PNG, WEBP, HEIC)'}</label>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -214,14 +288,14 @@ const AdminGallery = () => {
               />
             </div>
 
-            <div style={{ minWidth: '150px' }}>
+            <div style={{ minWidth: '150px', display: 'flex', gap: '8px' }}>
               <button 
                 type="submit" 
                 className="btn btn-primary" 
                 disabled={uploading || saving || !imageUrl}
                 style={{ 
                   height: '48px', 
-                  width: '100%', 
+                  flex: 1,
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
@@ -229,15 +303,33 @@ const AdminGallery = () => {
                   boxShadow: '0 4px 12px rgba(31, 63, 47, 0.15)'
                 }}
               >
-                <Plus size={18} />
-                {saving ? 'กำลังบันทึก...' : 'เพิ่มลงแกลเลอรี'}
+                {editingItem ? <Edit2 size={18} /> : <Plus size={18} />}
+                {saving ? 'กำลังบันทึก...' : (editingItem ? 'อัปเดตรูปภาพ' : 'เพิ่มลงแกลเลอรี')}
               </button>
+              {editingItem && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  style={{
+                    height: '48px',
+                    padding: '0 16px',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: '#4b5563',
+                    fontWeight: 500
+                  }}
+                >
+                  ยกเลิก
+                </button>
+              )}
             </div>
           </div>
           
           {imageUrl && (
             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <span style={{ fontSize: '0.9rem', color: 'var(--primary)' }}>ดูตัวอย่างรูปภาพที่จะเพิ่ม:</span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--primary)' }}>ดูตัวอย่างรูปภาพที่จะบันทึก:</span>
               <div style={{ position: 'relative', width: '120px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--accent)' }}>
                 <img src={`/image/${imageUrl}`} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <button 
@@ -276,7 +368,7 @@ const AdminGallery = () => {
                 borderRadius: '16px',
                 overflow: 'hidden',
                 boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
-                border: '1px solid rgba(0,0,0,0.02)',
+                border: editingItem?._id === item._id ? '2px solid var(--accent)' : '1px solid rgba(0,0,0,0.02)',
                 aspectRatio: '3/2',
                 backgroundColor: '#f5f5f5'
               }}
@@ -299,28 +391,50 @@ const AdminGallery = () => {
                 justifyContent: 'space-between',
                 alignItems: 'flex-end'
               }}>
-                <span style={{ color: 'white', fontSize: '0.88rem', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>
+                <span style={{ color: 'white', fontSize: '0.88rem', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
                   {item.title || 'ไม่มีคำอธิบาย'}
                 </span>
                 
-                <button 
-                  onClick={() => handleDelete(item._id)}
-                  style={{
-                    background: '#fbebe9',
-                    color: '#c62828',
-                    border: '1px solid rgba(198,40,40,0.1)',
-                    borderRadius: '8px',
-                    padding: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s'
-                  }}
-                  title="ลบรูปภาพนี้"
-                >
-                  <Trash2 size={15} />
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button 
+                    type="button"
+                    onClick={() => openEdit(item)}
+                    style={{
+                      background: 'rgba(255,255,255,0.9)',
+                      color: 'var(--primary)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    title="แก้ไขรูปภาพนี้"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleDelete(item._id)}
+                    style={{
+                      background: '#fbebe9',
+                      color: '#c62828',
+                      border: '1px solid rgba(198,40,40,0.1)',
+                      borderRadius: '8px',
+                      padding: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    title="ลบรูปภาพนี้"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

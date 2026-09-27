@@ -16,20 +16,30 @@ exports.uploadImage = async (req, res, next) => {
     const matches = image.match(/^data:image\/([a-zA-Z0-9]+);base64,/);
     const extension = (matches && matches[1]) || 'jpg';
     
-    // Clean name input
-    const cleanName = name ? name.replace(/[^a-zA-Z0-9.]/g, '_') : '';
-    const filename = cleanName || `upload_${Date.now()}.${extension}`;
+    // Clean name input and prefix with timestamp to ensure unique URLs and avoid cache collisions
+    const cleanName = name ? name.replace(/[^a-zA-Z0-9.]/g, '_') : `photo.${extension}`;
+    const filename = `${Date.now()}_${cleanName}`;
 
-    // Target path in frontend public directory
-    const targetDir = path.join(__dirname, '../../../frontend/public/image');
-    
-    // Ensure dir exists
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
+    // Target 1: Frontend public directory
+    const devDir = path.join(__dirname, '../../../frontend/public/image');
+    if (!fs.existsSync(devDir)) {
+      try { fs.mkdirSync(devDir, { recursive: true }); } catch (e) {}
+    }
+    try {
+      fs.writeFileSync(path.join(devDir, filename), buffer);
+    } catch (e) {
+      console.warn('Could not write to devDir:', e.message);
     }
 
-    const filePath = path.join(targetDir, filename);
-    fs.writeFileSync(filePath, buffer);
+    // Target 2: Production web root (/var/www/html/charoensri/image)
+    const prodDir = '/var/www/html/charoensri/image';
+    if (fs.existsSync(prodDir)) {
+      try {
+        fs.writeFileSync(path.join(prodDir, filename), buffer);
+      } catch (e) {
+        console.warn('Could not write to prodDir:', e.message);
+      }
+    }
 
     res.status(200).json({ 
       success: true, 

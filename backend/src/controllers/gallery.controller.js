@@ -24,6 +24,24 @@ exports.createGallery = async (req, res, next) => {
   }
 };
 
+// @desc    Update a gallery photo
+// @route   PUT /api/gallery/:id
+// @access  Private/Admin
+exports.updateGallery = async (req, res, next) => {
+  try {
+    const gallery = await Gallery.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!gallery) {
+      return res.status(404).json({ success: false, error: 'Gallery photo not found' });
+    }
+    res.status(200).json({ success: true, data: gallery });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete a gallery photo
 // @route   DELETE /api/gallery/:id
 // @access  Private/Admin
@@ -38,3 +56,4 @@ exports.deleteGallery = async (req, res, next) => {
     next(error);
   }
 };
+
