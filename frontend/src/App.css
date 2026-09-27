@@ -87,6 +87,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .hero-bg {
@@ -96,7 +97,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -2;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .hero-overlay {
@@ -105,11 +107,14 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(31,63,47,0.6) 100%);
-  z-index: -1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(31,63,47,0.65) 100%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .hero-content {
+  position: relative;
+  z-index: 2;
   text-align: center;
   max-width: 800px;
   padding: 3rem;
@@ -517,10 +522,83 @@ footer {
   color: var(--primary) !important;
 }
 
+/* Section Base & Grids */
+.services-section {
+  padding: 5rem 5%;
+  background-color: #f9f9f9;
+}
+
+.services-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  justify-content: center;
+}
+
+.promotions-section {
+  padding: 5rem 5%;
+  background-color: white;
+}
+
+.promotions-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  justify-content: center;
+}
+
+.therapists-section {
+  padding: 5rem 5%;
+  background-color: #f9f9f9;
+}
+
+.section-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 50px;
+  font-size: 1rem;
+  margin-top: -30px;
+  line-height: 1.6;
+}
+
+.therapists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contents-section {
+  padding: 5rem 5%;
+  background-color: #f9f9f9;
+}
+
+.contents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navbar {
-    padding: 1rem 1.5rem;
+    padding: 0.85rem 1.25rem;
+  }
+  .nav-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+    gap: 8px;
+  }
+  .nav-logo {
+    width: 38px;
+    height: 38px;
   }
   .hamburger {
     display: block;
@@ -529,37 +607,139 @@ footer {
     position: fixed;
     top: 0;
     right: -100%;
-    width: 250px;
+    width: 260px;
     height: 100vh;
-    background: rgba(31, 63, 47, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(31, 63, 47, 0.98);
+    backdrop-filter: blur(12px);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2rem;
+    gap: 1.75rem;
     transition: right 0.3s ease;
     z-index: 1000;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.3);
   }
   .nav-links.active {
     right: 0;
   }
   .nav-link {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
+  }
+
+  /* Hero Section on Mobile */
+  .hero {
+    min-height: 100svh;
+    height: auto;
+    padding: 95px 1.25rem 45px;
+  }
+  .hero-content {
+    padding: 2.25rem 1.25rem;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 550px;
+    margin: auto;
+  }
+  .hero-subtitle {
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
   }
   .hero-title {
-    font-size: 3rem;
+    font-size: 2.35rem;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    word-break: keep-all;
+  }
+  .hero-description {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin-bottom: 1.75rem;
   }
   .hero-actions {
     flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
   }
+  .btn {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  /* Section Spacing */
+  .features,
+  .services-section,
+  .promotions-section,
+  .therapists-section,
+  .gallery,
+  .contents-section {
+    padding: 3.5rem 1.25rem;
+  }
+
+  .section-title {
+    font-size: 1.85rem;
+    margin-bottom: 2.25rem;
+  }
+  .section-title::after {
+    bottom: -10px;
+    width: 50px;
+  }
+  .section-subtitle {
+    margin-top: -20px;
+    margin-bottom: 30px;
+    font-size: 0.9rem;
+  }
+
+  /* Features */
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .feature-card {
+    padding: 2rem 1.25rem;
+  }
+  .feature-icon-wrapper {
+    width: 65px;
+    height: 65px;
+    margin-bottom: 1rem;
+  }
+
+  /* Grids: Single Column on Mobile */
+  .services-grid,
+  .promotions-grid,
+  .therapists-grid,
+  .contents-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Gallery: 2 Compact Columns */
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .gallery-item {
+    height: 140px;
+    border-radius: 10px;
+  }
+
+  /* Card covers */
+  .card-cover-image-container {
+    height: 180px;
+  }
+
+  /* Footer */
   footer {
-    padding: 3.5rem 5% 2rem;
+    padding: 3.5rem 1.25rem 2rem;
     text-align: center;
+  }
+  .footer-brand {
+    font-size: 1.75rem;
   }
   .footer-content {
     grid-template-columns: 1fr;
-    gap: 35px;
+    gap: 30px;
   }
   .footer-column h3::after {
     left: 50%;
@@ -574,3 +754,80 @@ footer {
     gap: 12px;
   }
 }
+
+/* Small Mobile Screens (iPhone SE, 320px - 380px) */
+@media (max-width: 380px) {
+  .navbar {
+    padding: 0.7rem 0.85rem;
+  }
+  .nav-brand {
+    font-size: 1.05rem;
+    letter-spacing: 0px;
+    gap: 6px;
+  }
+  .nav-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .hero {
+    padding: 80px 0.75rem 35px;
+  }
+  .hero-content {
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
+  }
+  .hero-subtitle {
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+  .hero-title {
+    font-size: 1.85rem;
+    margin-bottom: 0.75rem;
+  }
+  .hero-description {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+  .btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .features,
+  .services-section,
+  .promotions-section,
+  .therapists-section,
+  .gallery,
+  .contents-section {
+    padding: 2.75rem 0.85rem;
+  }
+
+  .section-title {
+    font-size: 1.55rem;
+    margin-bottom: 1.75rem;
+  }
+  .section-subtitle {
+    font-size: 0.85rem;
+    margin-top: -15px;
+    margin-bottom: 22px;
+  }
+
+  .feature-card {
+    padding: 1.5rem 1rem;
+  }
+  .feature-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .gallery-item {
+    height: 115px;
+  }
+
+  .card-cover-image-container {
+    height: 160px;
+  }
+}
+

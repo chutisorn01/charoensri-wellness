@@ -340,7 +340,7 @@ function Home() {
       </section>
 
       {/* Services List Section (Dynamic) */}
-      <section id="services" className="services-list" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
+      <section id="services" className="services-section">
         <motion.h2 
           className="section-title"
           initial={{ opacity: 0, y: 20 }}
@@ -353,18 +353,11 @@ function Home() {
         </motion.h2>
         
         <motion.div 
+          className="services-grid"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.8 }}
-          style={{ 
-            maxWidth: '1200px', 
-            margin: '0 auto', 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-            gap: '25px', 
-            justifyContent: 'center' 
-          }}
         >
           {loading ? (
             <p style={{ textAlign: 'center', gridColumn: '1 / -1', color: 'var(--text-muted)' }}>กำลังโหลดข้อมูลบริการ...</p>
@@ -453,7 +446,7 @@ function Home() {
       </section>
 
       {/* Promotions Section (Dynamic & New) */}
-      <section id="promotions" className="promotions-section" style={{ padding: '80px 5%', backgroundColor: 'white' }}>
+      <section id="promotions" className="promotions-section">
         <motion.h2 
           className="section-title"
           initial={{ opacity: 0, y: 20 }}
@@ -465,18 +458,11 @@ function Home() {
         </motion.h2>
 
         <motion.div 
+          className="promotions-grid"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.8 }}
-          style={{ 
-            maxWidth: '1200px', 
-            margin: '0 auto', 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
-            gap: '30px', 
-            justifyContent: 'center' 
-          }}
         >
           {loading ? (
             <p style={{ textAlign: 'center', gridColumn: '1 / -1', color: 'var(--text-muted)' }}>กำลังโหลดโปรโมชัน...</p>
@@ -535,7 +521,7 @@ function Home() {
       </section>
 
       {/* Therapists/Doctors Section */}
-      <section id="therapists" className="therapists-section" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
+      <section id="therapists" className="therapists-section">
         <motion.h2 
           className="section-title"
           initial={{ opacity: 0, y: 20 }}
@@ -546,7 +532,7 @@ function Home() {
           ผู้เชี่ยวชาญการนวดและการบำบัด
         </motion.h2>
         
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '50px', fontSize: '1rem', marginTop: '-30px' }}>
+        <p className="section-subtitle">
           ทีมพนักงานนวดและผู้ให้บริการสปามืออาชีพ ผ่านการอบรมตามมาตรฐาน ได้รับการยอมรับจากผู้ใช้บริการจริง
         </p>
 
@@ -556,13 +542,6 @@ function Home() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '30px',
-            maxWidth: '1200px',
-            margin: '0 auto'
-          }}
         >
           {doctors.length > 0 ? (
             doctors.map((doc) => (
@@ -693,7 +672,7 @@ function Home() {
       </section>
 
       {/* Videos & Articles Section */}
-      <section id="contents" className="contents-section" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
+      <section id="contents" className="contents-section">
         <motion.h2 
           className="section-title"
           initial={{ opacity: 0, y: 20 }}
@@ -704,18 +683,14 @@ function Home() {
         >
           วิดีโอ & บทความแนะนำ
         </motion.h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '50px', fontSize: '1rem' }}>
+        <p className="section-subtitle">
           บรรยากาศการบริการสปา วิดีโอรีวิวความประทับใจ และเกร็ดความรู้ดีๆ จาก เจริญศรีนวดแผนไทย
         </p>
 
         {contents.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>กำลังรออัปโหลดเนื้อหาจากแอดมินเร็วๆ นี้...</p>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '30px'
-          }}>
+          <div className="contents-grid">
             {contents.map((item) => {
               const isVideo = !!item.videoUrl;
               return (
